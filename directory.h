@@ -33,13 +33,6 @@ void ToCString(Directory dir, char *dest)
 {
 	char *writePos = dest;
 	
-	#ifndef WIN32
-	if(dir.global)
-	{
-		*writePos = '/';
-		++writePos;
-	}
-	#endif
 	for(int i=0; i<dir.count; ++i)
 	{
 		Copy(dir.folders[i], dir.nameLengths[i], writePos);
@@ -65,14 +58,6 @@ void ToFilepathCStr(Directory dir, char *dest, char const *filename, str_size_t 
 						, char const *ext = NULL, str_size_t extNameLength = 0)
 {
 	char *writePos = dest;
-	
-	#ifndef WIN32
-	if(dir.global)
-	{
-		*writePos = '/';
-		++writePos;
-	}
-	#endif
 
 	for(int i=0; i<dir.count; ++i)
 	{

@@ -13,11 +13,8 @@
 #include "list.h"
 #include <time.h>
 
-#ifndef WIN32
-#include "linux/platform_linux.h"
-#else
+
 #include "windows/platform_windows.h"
-#endif
 
 //#define assert(EXPR) 
 
@@ -50,7 +47,8 @@ struct Arguments
 		HasRoomWhitelist = 1<<5,
 		HasRoomBlacklist = 1<<6,
 		GenerateProject = 1<<7,
-		UnusedAsConstants = 1<<8
+		UnusedAsConstants = 1<<8,
+		NoDatafileRooms = 1<<9
 	};
 
 	uint flags;
@@ -100,37 +98,43 @@ void GMSProjListResources(MemoryStack *memStack, Arguments *args, Buffer proj, R
 	SeekAfterComment(&walk);
 	
 	SeekAfterTagOpen(&walk, StrArg("datafiles"));
-
-	printf("Finding rooms in datafiles\n");
-
 	uint dataFileCount = 0;
 	uint totalDatafiles = 0;
+	if ((args->flags & Arguments::NoDatafileRooms) != 0)
+	{
+		printf("Skipping searching datafile rooms\n");
+	}
+	else
+	{
+		//printf(args->flags & Arguments::NoDatafileRooms);
 
-	if(StringEqual(walk.str, StrArg("datafiles")))
-	{	
-		while(!TrySeekNextTagOpen(&walk, StrArg("sounds")) && NextTagOpen(&walk))
-		{
-			if(StringEqual(walk.str, StrArg("datafile")))
+		
+		printf("Finding rooms in datafiles\n");
+		if(StringEqual(walk.str, StrArg("datafiles")))
+		{	
+			while(!TrySeekNextTagOpen(&walk, StrArg("sounds")) && NextTagOpen(&walk))
 			{
-				totalDatafiles += 1;
-				if(SeekAfterTagOpen(&walk, StrArg("filename")))
+				if(StringEqual(walk.str, StrArg("datafile")))
 				{
-					GetStringValueAndCloseTag(&walk);
-				
-					if(EndsWith(walk.str, StrArg(".room.gmx")))
+					totalDatafiles += 1;
+					if(SeekAfterTagOpen(&walk, StrArg("filename")))
 					{
-						++dataFileCount;
-					}
+						GetStringValueAndCloseTag(&walk);
+					
+						if(EndsWith(walk.str, StrArg(".room.gmx")))
+						{
+							++dataFileCount;
+						}
 
-					SeekAfterTagEnd(&walk, StrArg("datafile"));
+						SeekAfterTagEnd(&walk, StrArg("datafile"));
+					}
 				}
 			}
 		}
-	}
 
-	printf("Number of rooms in datafiles %d\n", dataFileCount);
-	printf("Total datafiles %d\n", totalDatafiles);
-	
+		printf("Number of rooms in datafiles %d\n", dataFileCount);
+		printf("Total datafiles %d\n", totalDatafiles);
+	}
 	res = PushResourcesList(memStack, dataFileCount, lineCount);
 	*outRes = res;
 
@@ -1175,6 +1179,7 @@ void GenerateProject(MemoryStack *memStack, Arguments *args, Buffer absProjPath,
 	Buffer baseNameNoExt = SubstrBasename(absProjPath);
 	FromAbsolutePathCstr(&rootDir, absProjPath.ptr);	
 	CdUp(&rootDir);
+	//printf("AAAAAAAAAAAA: %s%",rootDir.ptr);
 	ToCString(rootDir, pathBuff.ptr);
 	uint len = strlen(pathBuff.ptr);
 	uint writePos = len;
@@ -1243,10 +1248,12 @@ void GenerateProject(MemoryStack *memStack, Arguments *args, Buffer absProjPath,
 
 		constantCount += unusedRes->count;
 		fprintf(outFile, "%s%d%s\n", "  <constants number=\"",constantCount,"\">");
-
+		int i = 10;
 		for(auto it = IterateStringSet(unusedRes); MoveNext(&it);)
 		{
-			fprintf(outFile, "    <constant name=\"" BUFF_FORMAT "\">-4</constant>\n", BUFF_PRINTARG(it.at->value.asBuff));
+			fprintf(outFile, "    <constant name=\"" BUFF_FORMAT, BUFF_PRINTARG(it.at->value.asBuff));
+			fprintf(outFile, "\">-%d</constant>\n",i);
+			i++;
 		}
 
 		while(NextLine(&walk, end))
@@ -1468,6 +1475,11 @@ void ParseArguments(MemoryStack *memStack, Arguments *outArgs, int argc, char **
 		else if(IsArg(argv[i], "--unused-as-constants", "-uc"))
 		{
 			outArgs->flags |= Arguments::UnusedAsConstants;
+		}
+		else if(IsArg(argv[i], "--no-datafile-rooms", "-nd"))
+		{
+			outArgs->flags |= Arguments::NoDatafileRooms;
+			
 		}
 	}
 }
