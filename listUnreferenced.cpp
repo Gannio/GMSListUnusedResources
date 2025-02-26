@@ -1104,7 +1104,6 @@ void PrintLicenses()
 {
 	printf("%s\n\n", FL_License);
 	printf("Hash function from :\nhttps://www.codeproject.com/Articles/716530/Fastest-Hash-Function-for-Table-Lookups-in-C\n");
-	printf("strstrsse4\n\n%s\n", WojciechLicense);
 	
 }
 

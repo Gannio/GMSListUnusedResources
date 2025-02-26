@@ -6,18 +6,16 @@
 #include <stdlib.h>
 #include <string.h>
 #include <string>
-#include "str_str_sse4.h"
 //#include "meow_hash_x64_aesni.h"
 #include <assert.h>
 
-#include <strings.h>
 
-#define InlineFunc inline __attribute__((always_inline))
+#define InlineFunc inline
 
 #define ArraySize(x) ((sizeof(x) / sizeof(0 [x])) / ((size_t)(!(sizeof(x) % sizeof(0 [x])))))
 
-#define Likely(x)    __builtin_expect (!!(x), 1)
-#define Unlikely(x)  __builtin_expect (!!(x), 0)
+#define Likely(x)    x
+#define Unlikely(x)  x
 
 
 typedef unsigned int str_size_t;
